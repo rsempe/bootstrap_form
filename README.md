@@ -50,6 +50,13 @@ This plugin provides the following form helpers:
 * date_select
 * check_box
 
+* i18n_text_field
+* i18n_text_area
+
+* datetimer_picker
+* date_picker
+* time_picker
+
 These form helpers accept the same options as the Rails form
 helpers with the addition of two options `label` and `help`. Here's an
 example form that also uses the `actions` helper for the submit button:
