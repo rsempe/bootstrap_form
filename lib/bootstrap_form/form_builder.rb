@@ -26,13 +26,15 @@ module BootstrapForm
         else
           class_names = ["control-group"]
           class_names << :error if object.errors[name].any?
+          class_names << :error if name == :attachment and object.errors["%s_file_name" % name].any?
+
           class_names << :last if options[:last]
 
 
           content_tag :div, class: class_names.join(" ") do
             (options[:no_label].blank? ? label(name, options[:label], class: 'control-label') : "").html_safe +
             content_tag(:div, class: 'controls') do
-              help = object.errors[name].any? ? object.errors[name].join(', ') : options[:help]
+              help = display_error_or_help(name, options[:help])
               help = content_tag(@help_tag, class: @help_css) { help } if help
               args << options.except(:label, :help, :no_label, :no_bootstrap, :last)
 
@@ -52,10 +54,20 @@ module BootstrapForm
       end
     end
 
+    def display_error_or_help name, help_message
+      if object.errors[name].any?
+        object.errors[name].join(', ')
+      elsif object.errors["%s_file_name" % name].any?
+        object.errors["%s_file_name" % name].join(', ')
+      else
+        help_message
+      end
+    end
+
     def content_for method_name, field, content, options = {}
       case method_name.to_sym
         when :file_field
-          file_field_render(method_name, field, content, options)
+          content_tag :div, file_field_render(method_name, field, content, options), :style => "margin-top: 10px"
         else
           content
       end
@@ -74,7 +86,7 @@ module BootstrapForm
         case options[:file_type].to_sym
           when :file, :pdf
             filelink_html = @template.link_to @object.send("#{field}_file_name"), @object.send("#{field}").url,:target => :blank
-            filename_html = content_tag(:div, content_tag(:i, nil, class: "icon-file") + filelink_html, :style => "margin-top: 10px")
+            filename_html = content_tag(:i, nil, class: "icon-file") + filelink_html
 
           when :media
             url = options[:paperclip_style] ? @object.send(field).url(options[:paperclip_style]) : @object.send(field).url()
@@ -237,7 +249,9 @@ module BootstrapForm
 
         content_tag(:a,
           :"data-toggle" => :tab,
-          :href          =>  href) do
+          :href          =>  href
+        ) do
+          @template.client_image_tag(:leadformance, "languages/png/%s.png" % language.locale, :class => :flag) +
           language[format].humanize
         end
       end
