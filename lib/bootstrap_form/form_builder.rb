@@ -18,7 +18,6 @@ module BootstrapForm
 
     %w{text_field text_area password_field collection_select file_field date_select select}.each do |method_name|
       define_method(method_name) do |name, *args|
-
         options = args.extract_options!.symbolize_keys!
 
         if options[:no_bootstrap]
@@ -30,9 +29,8 @@ module BootstrapForm
 
           class_names << :last if options[:last]
 
-
           content_tag :div, class: class_names.join(" ") do
-            (options[:no_label].blank? ? label(name, options[:label], class: 'control-label') : "").html_safe +
+            (options[:no_label].blank? ? require_label(name, options[:label], class: 'control-label') : "").html_safe +
             content_tag(:div, class: 'controls') do
               help = display_error_or_help(name, options[:help])
               help = content_tag(@help_tag, class: @help_css) { help } if help
@@ -130,7 +128,7 @@ module BootstrapForm
       raise "no :major_label configured" if options[:fields_grouped] and options[:major_label].blank?
 
       content_tag :div, class: "control-group#{(' error' if any_errors_on?(names))}"  do
-        label(options[:fields_grouped] ? options[:major_label] : names.first, options[:label], class: 'control-label') +
+        require_label(options[:fields_grouped] ? options[:major_label] : names.first, options[:label], class: 'control-label') +
         content_tag(:div, class: "tab-container") do
           content_tag(:span, "Translate",class: "translate-title") +
           content_tag(:div) do
@@ -169,7 +167,7 @@ module BootstrapForm
       options = args.extract_options!.symbolize_keys!.merge({:bypass_authorization => true})
 
       content_tag :div, class: "control-group control-group-margin" do
-        label(name, options[:label], class: 'control-label') +
+        require_label(name, options[:label], class: 'control-label') +
         content_tag(:div, class: "controls form-inline") do
           text_field_for_date_picker((name.to_s + "_date").to_sym, options) +
           text_field_for_time_picker((name.to_s + "_time").to_sym, options)
@@ -181,7 +179,7 @@ module BootstrapForm
       options = args.extract_options!.symbolize_keys!
 
       content_tag :div, class: "control-group control-group-margin" do
-        label(name, options[:label], class: 'control-label') +
+        require_label(name, options[:label], class: 'control-label') +
         content_tag(:div, class: "controls") do
           text_field_for_date_picker(name, options)
         end
@@ -192,7 +190,7 @@ module BootstrapForm
       options = args.extract_options!.symbolize_keys!
 
       content_tag :div, class: "control-group control-group-margin" do
-        label(name, options[:label], class: 'control-label') +
+        require_label(name, options[:label], class: 'control-label') +
         content_tag(:div, class: "controls") do
           text_field_for_time_picker(name, options)
         end
@@ -208,7 +206,7 @@ module BootstrapForm
           args << options.except(:label, :help)
 
           html = super(name, *args) + ' ' + (options[:label].blank? ? object.class.human_attribute_name(name) : options[:label])
-          label(name, html, class: 'checkbox')
+          require_label(name, html, class: 'checkbox')
         end
       end
     end
@@ -310,7 +308,7 @@ module BootstrapForm
     end
 
     def language_tabs_format(languages)
-      languages.count > 4 ? :locale : :name
+      languages.length > 4 ? :locale : :name
     end
 
 
@@ -342,6 +340,14 @@ module BootstrapForm
 
     def any_errors_on? fields
       fields.map{|name| object.errors[name].any?}.index(true).present?
+    end
+
+    def require_label method, *args
+      label(method, *args).gsub("</label>", "%s</label>" % mark_required(object, method)).html_safe
+    end
+
+    def mark_required(object, attribute)
+      "*" if object.class.validators_on(attribute).map(&:class).include? ActiveModel::Validations::PresenceValidator
     end
 
   end
