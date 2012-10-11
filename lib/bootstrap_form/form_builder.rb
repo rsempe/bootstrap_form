@@ -151,13 +151,14 @@ module BootstrapForm
       default_language = options[:languages].first.locale
 
       options.delete(:languages).each do |language|
+        tabs         << construct_tab(object, options[:fields_grouped] ? options[:major_label] : names.first, default_language, language, format, options)
+
         new_field = if options[:tag_type] == :file_field
           names.first
         else
-          "%s_%s" % [options[:fields_grouped] ? options[:major_label] : names.first, language.locale]
+          options[:fields_grouped] ? options[:major_label] : names.first
         end
 
-        tabs         << construct_tab(object, new_field, default_language, language, format, options)
         tabs_content << construct_tab_content(object, names, options[:fields_grouped] ? new_field : names.first, default_language == language.locale, language.locale, options)
       end
       content_tag(:ul, tabs.join.html_safe          , class: "nav nav-tabs") +
@@ -165,7 +166,7 @@ module BootstrapForm
     end
 
     def datetime_picker name, *args
-      options = args.extract_options!.symbolize_keys!
+      options = args.extract_options!.symbolize_keys!.merge({:bypass_authorization => true})
 
       content_tag :div, class: "control-group control-group-margin" do
         label(name, options[:label], class: 'control-label') +
@@ -240,8 +241,7 @@ module BootstrapForm
 
     def construct_tab(object, field, default_language, language, format = :name, options = {})
       content_tag(:li, class: ('active' if language.locale == default_language)) do
-        # If file field, exception for generate id
-        href = tab_id(object, field, language.locale, options)
+        href = "#" << tab_id(object, field, language.locale, options)
 
         content_tag(:a,
           :"data-toggle" => :tab,
@@ -261,17 +261,15 @@ module BootstrapForm
 
           options[:label] = object.class.human_attribute_name(method)
 
-          if options[:help] == true
-            help_label = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, method.to_s])
-          end
+          help_label = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, method.to_s]) if options[:help] == true
 
-          method          = "%s_%s" % [method, locale] unless options[:tag_type] == :file_field
+          method = "%s_%s" % [method, locale] unless options[:tag_type] == :file_field
 
           html << case options[:tag_type]
             when :text_field
-              text_field(method, options.except(:tag_type).merge({:help => help_label, :by_pass_authorization => true}))
+              text_field(method, options.except(:tag_type).merge({:help => help_label, :bypass_authorization => true}))
             when :text_area
-              text_area(method, options.except(:tag_type).merge({:help => help_label, :by_pass_authorization => true}))
+              text_area(method, options.except(:tag_type).merge({:help => help_label, :bypass_authorization => true}))
             when :file_field
               fields_for options[:object] do |attachment_fields|
                 if attachment_fields.object.locale == locale
@@ -288,16 +286,17 @@ module BootstrapForm
     end
 
     def tab_id(object, field, locale, options)
-      if options[:tag_type] == :file_field
-        "%s_%s" % [options[:object], locale]
-      else
-        id = ""
-        if options[:sub_field].present?
-          id << ("%s_" % options[:sub_field])
-        end
+      # If file field, exception for generate id
+      id = case options[:tag_type]
+        when :file_field
+          "%s_%s" % [options[:object], locale]
+        else
+          id = ""
+          id << ("%s_" % options[:sub_field]) if options[:sub_field].present?
 
-        id << "%s_%s_%s" % [field, locale, object.id]
+          id << "%s_%s_%s" % [field, locale, object.id]
       end
+
     end
 
     def tab_pane_for(object, field, locale, active = false, options, &block)
