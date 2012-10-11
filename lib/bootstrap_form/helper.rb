@@ -1,7 +1,7 @@
 module BootstrapForm
   module Helper
     def bootstrap_form_for(object, options = {}, &block)
-      options[:builder] = BootstrapForm::FormBuilder
+      options[:builder] ||= BootstrapForm::FormBuilder 
 
       # add .form-vertical class if it's not horizontal
       options[:html] = {} unless options.has_key?(:html)

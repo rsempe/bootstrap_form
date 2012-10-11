@@ -241,11 +241,7 @@ module BootstrapForm
     def construct_tab(object, field, default_language, language, format = :name, options = {})
       content_tag(:li, class: ('active' if language.locale == default_language)) do
         # If file field, exception for generate id
-        href = if options[:tag_type] == :file_field
-          "%s_%s" % [options[:object], object.send(options[:object]).select{|attachment| attachment.locale == language.locale}.first.locale]
-        else
-          options[:sub_field].present? ? "#%s_%s_%s" % [options[:sub_field], field, object.id] : "#%s_%s" % [field, object.id]
-        end
+        href = tab_id(object, field, language.locale, options)
 
         content_tag(:a,
           :"data-toggle" => :tab,
@@ -273,9 +269,9 @@ module BootstrapForm
 
           html << case options[:tag_type]
             when :text_field
-              text_field(method, options.except(:tag_type).merge({:help => help_label}))
+              text_field(method, options.except(:tag_type).merge({:help => help_label, :by_pass_authorization => true}))
             when :text_area
-              text_area(method, options.except(:tag_type).merge({:help => help_label}))
+              text_area(method, options.except(:tag_type).merge({:help => help_label, :by_pass_authorization => true}))
             when :file_field
               fields_for options[:object] do |attachment_fields|
                 if attachment_fields.object.locale == locale
@@ -291,13 +287,21 @@ module BootstrapForm
       end
     end
 
-    def tab_pane_for(object, field, locale, active = false, options, &block)
-      id = if options[:tag_type] == :file_field
+    def tab_id(object, field, locale, options)
+      if options[:tag_type] == :file_field
         "%s_%s" % [options[:object], locale]
       else
-        options[:sub_field].present? ? "%s_%s_%s" % [options[:sub_field], field, object.id] : "%s_%s" % [field, object.id]
-      end
+        id = ""
+        if options[:sub_field].present?
+          id << ("%s_" % options[:sub_field])
+        end
 
+        id << "%s_%s_%s" % [field, locale, object.id]
+      end
+    end
+
+    def tab_pane_for(object, field, locale, active = false, options, &block)
+      id = tab_id(object, field, locale, options)
 
       content_tag(:div,
       :id    => id,
