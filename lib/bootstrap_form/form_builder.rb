@@ -14,6 +14,7 @@ module BootstrapForm
 
       @help_after = options.fetch(:help_position, '').to_sym == :after
 
+      @languages = options.delete(:languages)
     end
 
     %w{text_field text_area password_field collection_select file_field date_select select}.each do |method_name|
@@ -107,7 +108,7 @@ module BootstrapForm
       define_method(method_name) do |name, *args|
         options = args.extract_options!.symbolize_keys!
 
-        raise "no :languages options defined" if options[:languages].blank?
+        raise "Please defined :languages in boottstrap_form_for" if @languages.blank?
 
         options.merge!({tag_type: method_name.gsub("i18n_", "").to_sym})
 
@@ -129,26 +130,38 @@ module BootstrapForm
 
       content_tag :div, class: "control-group#{(' error' if any_errors_on?(names))}"  do
         require_label(options[:fields_grouped] ? options[:major_label] : names.first, options[:label], class: 'control-label') +
-        content_tag(:div, class: "tab-container") do
-          content_tag(:span, "Translate",class: "translate-title") +
-          content_tag(:div) do
-            if fields_translated?(object, names)
-              construct_tabs(object, names, options)
-            else
-              raise "no field to translate"
+        if @languages.length == 1
+          language = default_language = @languages.first
+          new_field = if options[:tag_type] == :file_field
+            names.first
+          else
+            options[:fields_grouped] ? options[:major_label] : names.first
+          end
+
+          tabs_content = construct_tab_content(object, names, options[:fields_grouped] ? new_field : names.first, default_language == language.locale, language.locale, options)
+        else
+          content_tag(:div, class: "tab-container") do
+            content_tag(:span, "Translate",class: "translate-title") +
+            content_tag(:div) do
+              if fields_translated?(object, names)
+                construct_tabs(object, names, options)
+              else
+                raise "no field to translate"
+              end
             end
           end
         end
+
       end
     end
 
     def construct_tabs object, names, options = {}
       tabs_content     = []
       tabs             = []
-      format           = language_tabs_format(options[:languages])
-      default_language = options[:languages].first.locale
+      format           = language_tabs_format
+      default_language = @languages.first.locale
 
-      options.delete(:languages).each do |language|
+      @languages.each do |language|
         tabs         << construct_tab(object, options[:fields_grouped] ? options[:major_label] : names.first, default_language, language, format, options)
 
         new_field = if options[:tag_type] == :file_field
@@ -196,6 +209,29 @@ module BootstrapForm
         end
       end
 
+    end
+
+    def datetime_picker_from_to starts_at, ends_at, *args
+      options = args.extract_options!.symbolize_keys!
+
+      content_tag :div, class: "control-group" do
+        require_label(options.delete(:major_label), class: 'control-label') +
+        content_tag(:div, class: "controls") do
+          content_tag(:div, :class => "input-append input-prepend") do
+  				  text_field_for_date_time_picker(starts_at, options.merge({:label => options[:label].first})) +
+            content_tag(:i, nil, class: "icon-white") +
+            text_field_for_date_time_picker(ends_at, options.merge({:label => options[:label].last}))
+          end
+        end
+      end
+        #   <i class="icon-white"></i>
+        #   <span class="add-on">To</span>
+        #   <input class="span2" id="prependedInput" size="16" type="text" placeholder="">
+        #   <span class="add-on"><i class="icon-calendar"></i></span>
+        #   <input class="time_picker hasDatepicker span1" id="event_starts_at_time" name="event[starts_at_time]" size="5" type="text" value="00:00" >
+        #   <span class="add-on"><i class="icon-time"></i></span>
+        # </div>
+        #       </div>
     end
 
 
@@ -307,8 +343,24 @@ module BootstrapForm
       end
     end
 
-    def language_tabs_format(languages)
-      languages.length > 4 ? :locale : :name
+    def language_tabs_format
+      @languages.length > 4 ? :locale : :name
+    end
+
+    def text_field_for_date_time_picker name, options = {}
+      content_tag(:span, options.delete(:label), class: 'add-on').html_safe +
+      content_tag(:span, :class => "input-append input-prepend date bootstrap_date_picker", :"data-date" => object.send(name.to_s + "_date"), :"data-date-format" => "dd/mm/yyyy") do
+        text_field(name.to_s + "_date", {:class => "input-small", :size => 10, :no_bootstrap => true}.merge(options)) +
+        content_tag(:span, class: "add-on") do
+          content_tag(:i, nil, class: "icon-calendar")
+        end
+      end +
+      text_field(name.to_s + "_time", {:class => "time_picker input-mini", :size => 5, :no_bootstrap => true}.merge(options)) +
+      content_tag(:span, class: "add-on") do
+        content_tag(:i, nil, class: "icon-time")
+      end
+
+
     end
 
 
