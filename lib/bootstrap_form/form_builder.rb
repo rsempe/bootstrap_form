@@ -35,6 +35,7 @@ module BootstrapForm
             content_tag(:div, class: 'controls') do
               help = display_error_or_help(name, options[:help])
               help = content_tag(@help_tag, class: @help_css) { help } if help
+              options[:placeholder] = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, name.to_s]) if options[:placeholder] == true
               args << options.except(:label, :help, :no_label, :no_bootstrap, :last)
 
               content = super(name, *args)
@@ -141,7 +142,7 @@ module BootstrapForm
           tabs_content = construct_tab_content(object, names, options[:fields_grouped] ? new_field : names.first, default_language == language.locale, language.locale, options)
         else
           content_tag(:div, class: "tab-container") do
-            content_tag(:span, "Translate",class: "translate-title") +
+            content_tag(:span, "Translate", class: "translate-title") +
             content_tag(:div) do
               if fields_translated?(object, names)
                 construct_tabs(object, names, options)
@@ -218,26 +219,23 @@ module BootstrapForm
         require_label(options.delete(:major_label), class: 'control-label') +
         content_tag(:div, class: "controls") do
           content_tag(:div, :class => "input-append input-prepend") do
-  				  text_field_for_date_time_picker(starts_at, options.merge({:label => options[:label].first})) +
+  				  text_field_for_date_time_picker(starts_at, options.merge({:label => I18n.t("date.from")})) +
             content_tag(:i, nil, class: "icon-white") +
-            text_field_for_date_time_picker(ends_at, options.merge({:label => options[:label].last}))
+            text_field_for_date_time_picker(ends_at, options.merge({:label => I18n.t("date.to")}))
           end
         end
       end
-        #   <i class="icon-white"></i>
-        #   <span class="add-on">To</span>
-        #   <input class="span2" id="prependedInput" size="16" type="text" placeholder="">
-        #   <span class="add-on"><i class="icon-calendar"></i></span>
-        #   <input class="time_picker hasDatepicker span1" id="event_starts_at_time" name="event[starts_at_time]" size="5" type="text" value="00:00" >
-        #   <span class="add-on"><i class="icon-time"></i></span>
-        # </div>
-        #       </div>
     end
 
 
     def check_box(name, *args)
       options = args.extract_options!.symbolize_keys!
-      content_tag :div, class: "control-group#{(' error' if object.errors[name].any?)}"  do
+
+      class_names = ["control-group"]
+      class_names << :error if object.errors[name].any?
+      class_names << :last if options[:last]
+
+      content_tag :div, class: class_names  do
         content_tag(:div, class: 'controls') do
           args << options.except(:label, :help)
 
@@ -348,7 +346,7 @@ module BootstrapForm
     end
 
     def text_field_for_date_time_picker name, options = {}
-      content_tag(:span, options.delete(:label), class: 'add-on').html_safe +
+      content_tag(:span, (options.delete(:label) || object.class.human_attribute_name(name)) + mark_required(name), class: 'add-on').html_safe +
       content_tag(:span, :class => "input-append input-prepend date bootstrap_date_picker", :"data-date" => object.send(name.to_s + "_date"), :"data-date-format" => "dd/mm/yyyy") do
         text_field(name.to_s + "_date", {:class => "input-small", :size => 10, :no_bootstrap => true}.merge(options)) +
         content_tag(:span, class: "add-on") do
@@ -395,11 +393,11 @@ module BootstrapForm
     end
 
     def require_label method, *args
-      label(method, *args).gsub("</label>", "%s</label>" % mark_required(object, method)).html_safe
+      label(method, *args).gsub("</label>", "%s</label>" % mark_required(method)).html_safe
     end
 
-    def mark_required(object, attribute)
-      "*" if object.class.validators_on(attribute).map(&:class).include? ActiveModel::Validations::PresenceValidator
+    def mark_required(attribute)
+      object.class.validators_on(attribute).map(&:class).include?(ActiveModel::Validations::PresenceValidator) ? "*" : ""
     end
 
   end
