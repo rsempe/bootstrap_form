@@ -353,11 +353,7 @@ module BootstrapForm
           content_tag(:i, nil, class: "icon-calendar")
         end
       end +
-      text_field(name.to_s + "_time", {:class => "time_picker input-mini", :size => 5, :no_bootstrap => true}.merge(options)) +
-      content_tag(:span, class: "add-on") do
-        content_tag(:i, nil, class: "icon-time")
-      end
-
+      text_field(name.to_s + "_time", {:class => "time_picker input-mini", :size => 5, :no_bootstrap => true}.merge(options))
 
     end
 
