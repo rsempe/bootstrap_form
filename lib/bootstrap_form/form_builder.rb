@@ -39,6 +39,8 @@ module BootstrapForm
               options[:placeholder] = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, name.to_s]) if options[:placeholder] == true
               args << options.except(:label, :help, :no_label, :no_bootstrap, :last)
 
+              name = "%s_%s" % [name.to_s, options.delete(:locale)] if options[:locale]
+
               content = super(name, *args)
 
               content = content_for method_name, name, content, options
@@ -61,7 +63,12 @@ module BootstrapForm
       elsif object.errors["%s_file_name" % name].any?
         object.errors["%s_file_name" % name].join(', ')
       else
-        help_message
+        case help_message
+        when true
+          I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, name.to_s])
+        else
+          help_message
+        end
       end
     end
 
