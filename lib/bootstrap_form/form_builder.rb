@@ -30,6 +30,7 @@ module BootstrapForm
 
           class_names << :last if options[:last]
 
+
           content_tag :div, class: class_names.join(" ") do
             (options[:no_label].blank? ? require_label(name, options[:label], class: 'control-label') : "").html_safe +
             content_tag(:div, class: 'controls') do
@@ -347,21 +348,15 @@ module BootstrapForm
 
     def text_field_for_date_time_picker name, options = {}
       content_tag(:span, (options.delete(:label) || object.class.human_attribute_name(name)) + mark_required(name), class: 'add-on').html_safe +
-      content_tag(:span, :class => "input-append input-prepend date bootstrap_date_picker", :"data-date" => object.send(name.to_s + "_date"), :"data-date-format" => "dd/mm/yyyy") do
-        text_field(name.to_s + "_date", {:class => "input-small", :size => 10, :no_bootstrap => true}.merge(options)) +
-        content_tag(:span, class: "add-on") do
-          content_tag(:i, nil, class: "icon-calendar")
-        end
-      end +
-      text_field(name.to_s + "_time", {:class => "time_picker input-mini", :size => 5, :no_bootstrap => true}.merge(options))
-
+      text_field_for_date_picker(name.to_s + "_date", options.merge({:content_tag => :span})) +
+      text_field(name.to_s + "_time", {:class => "bootstrap_date_time_picker input-mini", :size => 5, :no_bootstrap => true}.merge(options))
     end
 
 
     def text_field_for_date_picker name, *args
       options = args.extract_options!.symbolize_keys!
 
-      content_tag(:div, :class => "input-append date bootstrap_date_picker", :"data-date" => object.send(name), :"data-date-format" => "dd/mm/yyyy") do
+      content_tag(options[:content_tag] || :div, :class => "input-append input-prepend date bootstrap_date_picker", :"data-date" => object.send(name), :"data-date-format" => "dd/mm/yyyy") do
         text_field(name, {:class => "input-small", :size => 10, :no_bootstrap => true}.merge(options)) +
         content_tag(:span, class: "add-on") do
           content_tag(:i, nil, class: "icon-calendar")
@@ -373,10 +368,7 @@ module BootstrapForm
       options = args.extract_options!.symbolize_keys!
 
       content_tag(:div, class: "input-append", style: "margin-left: 3px") do
-        text_field(name, {:class => "time_picker", :size => 5, :no_bootstrap => true}.merge(options)) +
-        content_tag(:span, class: "add-on") do
-          content_tag(:i, nil, class: "icon-time")
-        end
+        text_field(name, {:class => "bootstrap_date_time_picker", :size => 5, :no_bootstrap => true}.merge(options))
       end
     end
 
