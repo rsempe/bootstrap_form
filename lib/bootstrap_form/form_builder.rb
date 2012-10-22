@@ -189,7 +189,7 @@ module BootstrapForm
       options = args.extract_options!.symbolize_keys!.merge({:bypass_authorization => true})
 
       content_tag :div, class: "control-group control-group-margin" do
-        require_label(name, options[:label], class: 'control-label') +
+        require_label(name, options.delete(:label), {class: 'control-label'}) +
         content_tag(:div, class: "controls form-inline") do
           text_field_for_date_picker((name.to_s + "_date").to_sym, options) +
           text_field_for_time_picker((name.to_s + "_time").to_sym, options)
@@ -224,7 +224,7 @@ module BootstrapForm
       options = args.extract_options!.symbolize_keys!
 
       content_tag :div, class: "control-group" do
-        require_label(options.delete(:major_label), class: 'control-label') +
+        require_label(nil, options.delete(:major_label), {class: 'control-label'}.merge(options)) +
         content_tag(:div, class: "controls") do
           content_tag(:div, :class => "input-append input-prepend") do
   				  text_field_for_date_time_picker(starts_at, options.merge({:label => I18n.t("date.from")})) +
@@ -388,10 +388,15 @@ module BootstrapForm
     end
 
     def require_label method, *args
-      label(method, *args).gsub("</label>", "%s</label>" % mark_required(method)).html_safe
+      options = args.extract_options!.symbolize_keys!
+
+      label(method, *args).gsub("</label>", "%s</label>" % mark_required(method, options.delete(:required))).html_safe
     end
 
-    def mark_required(attribute)
+    def mark_required(attribute, bypass_required = false)
+      return "*" if bypass_required == true
+      return "" if bypass_required == false or attribute.blank?
+
       object.class.validators_on(attribute).map(&:class).include?(ActiveModel::Validations::PresenceValidator) ? "*" : ""
     end
 
