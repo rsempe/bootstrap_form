@@ -226,6 +226,7 @@ module BootstrapForm
       content_tag :div, class: "control-group" do
         require_label(nil, options.delete(:major_label), {class: 'control-label'}.merge(options)) +
         content_tag(:div, class: "controls") do
+          options.delete(:required)
           content_tag(:div, :class => "input-append input-prepend") do
   				  text_field_for_date_time_picker(starts_at, options.merge({:label => I18n.t("date.from")})) +
             content_tag(:i, nil, class: "icon-white") +
@@ -356,7 +357,7 @@ module BootstrapForm
     def text_field_for_date_time_picker name, options = {}
       content_tag(:span, (options.delete(:label) || object.class.human_attribute_name(name)) + mark_required(name), class: 'add-on').html_safe +
       text_field_for_date_picker(name.to_s + "_date", options.merge({:content_tag => :span})) +
-      text_field(name.to_s + "_time", {:class => "bootstrap_date_time_picker input-mini", :size => 5, :no_bootstrap => true}.merge(options))
+      text_field(name.to_s + "_time", {:class => "bootstrap_date_time_picker input-mini", :no_bootstrap => true}.merge(options))
     end
 
 
@@ -364,7 +365,7 @@ module BootstrapForm
       options = args.extract_options!.symbolize_keys!
 
       content_tag(options[:content_tag] || :div, :class => "input-append input-prepend date bootstrap_date_picker", :"data-date" => object.send(name), :"data-date-format" => "dd/mm/yyyy") do
-        text_field(name, {:class => "input-small", :size => 10, :no_bootstrap => true}.merge(options)) +
+        text_field(name, {:class => "input-small", :no_bootstrap => true}.merge(options)) +
         content_tag(:span, class: "add-on") do
           content_tag(:i, nil, class: "icon-calendar")
         end
@@ -374,9 +375,7 @@ module BootstrapForm
     def text_field_for_time_picker name, *args
       options = args.extract_options!.symbolize_keys!
 
-      content_tag(:div, class: "input-append", style: "margin-left: 3px") do
-        text_field(name, {:class => "bootstrap_date_time_picker", :size => 5, :no_bootstrap => true}.merge(options))
-      end
+      text_field(name, {:class => "bootstrap_date_time_picker", :no_bootstrap => true}.merge(options))
     end
 
     def fields_translated? object, fields
