@@ -32,7 +32,7 @@ module BootstrapForm
 
 
           content_tag :div, class: class_names.join(" ") do
-            (options[:no_label].blank? ? require_label(name, options[:label], class: 'control-label') : "").html_safe +
+            (options[:no_label].blank? ? require_label(name, options[:label], {class: 'control-label'}.merge(options.slice(:required))) : "").html_safe +
             content_tag(:div, class: 'controls') do
               help = display_error_or_help(name, options[:help])
               help = content_tag(@help_tag, class: @help_css) { help } if help
