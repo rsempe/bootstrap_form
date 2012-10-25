@@ -185,52 +185,55 @@ module BootstrapForm
       content_tag(:div, tabs_content.join.html_safe , class: "tab-content")
     end
 
-    def datetime_picker name, *args
-      options = args.extract_options!.symbolize_keys!.merge({:bypass_authorization => true})
+    # datetime_picker : Display date and time picker
+    # date_picker     : Display date picker
+    # time_picker     : Display time picker
+    %w(datetime_picker date_picker time_picker).each do |method_name|
+      define_method(method_name) do |name, *args|
+        options = args.extract_options!.symbolize_keys!.merge({:bypass_authorization => true})
 
-      content_tag :div, class: "control-group control-group-margin" do
-        require_label(name, options.delete(:label), {class: 'control-label'}) +
-        content_tag(:div, class: "controls form-inline") do
-          text_field_for_date_picker((name.to_s + "_date").to_sym, options) +
-          text_field_for_time_picker((name.to_s + "_time").to_sym, options)
+        class_names = %w(control-group)
+        class_names << :error if object.errors[name].any?
+
+        content_tag :div, class: class_names do
+          require_label(name, options.delete(:label), {class: 'control-label'}) +
+          content_tag(:div, class: "controls form-inline") do
+            case method_name
+            when "datetime_picker"
+              options.merge!({:bypass_authorization => true})
+
+              text_field_for_date_picker((name.to_s + "_date").to_sym, options) +
+              text_field_for_time_picker((name.to_s + "_time").to_sym, options)
+            when "date_picker"
+              text_field_for_date_picker(name, options)
+            when "time_picker"
+              text_field_for_time_picker(name, options)
+            end
+          end
         end
+
       end
     end
 
-    def date_picker name, *args
-      options = args.extract_options!.symbolize_keys!
-
-      content_tag :div, class: "control-group control-group-margin" do
-        require_label(name, options[:label], class: 'control-label') +
-        content_tag(:div, class: "controls") do
-          text_field_for_date_picker(name, options)
-        end
-      end
-    end
-
-    def time_picker name, *args
-      options = args.extract_options!.symbolize_keys!
-
-      content_tag :div, class: "control-group control-group-margin" do
-        require_label(name, options[:label], class: 'control-label') +
-        content_tag(:div, class: "controls") do
-          text_field_for_time_picker(name, options)
-        end
-      end
-
-    end
 
     def datetime_picker_from_to starts_at, ends_at, *args
       options = args.extract_options!.symbolize_keys!
 
-      content_tag :div, class: "control-group" do
+      class_names = %w(control-group)
+      class_names << :error if object.errors[starts_at].any? or object.errors[ends_at].any?
+
+      content_tag :div, class: class_names do
         require_label(nil, options.delete(:major_label), {class: 'control-label'}.merge(options)) +
         content_tag(:div, class: "controls") do
           options.delete(:required)
           content_tag(:div, :class => "input-append input-prepend") do
-  				  text_field_for_date_time_picker(starts_at, options.merge({:label => I18n.t("date.from")})) +
+            content_tag(:span) do
+              text_field_for_date_time_picker(starts_at, options.merge({:label => I18n.t("date.from")}))
+            end +
             content_tag(:i, nil, class: "icon-white") +
-            text_field_for_date_time_picker(ends_at, options.merge({:label => I18n.t("date.to")}))
+            content_tag(:span) do
+              text_field_for_date_time_picker(ends_at, options.merge({:label => I18n.t("date.to")}))
+            end
           end
         end
       end
