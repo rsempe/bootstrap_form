@@ -21,23 +21,26 @@ module BootstrapForm
       define_method(method_name) do |name, *args|
         options = args.extract_options!.symbolize_keys!
 
-        if options[:no_bootstrap]
-          super(name, options.except(:label, :help, :no_label, :no_bootstrap))
+        options[:placeholder] = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, name.to_s]) if options[:placeholder] == true
+
+        if options.delete(:no_bootstrap)
+          name = "%s_%s" % [name.to_s, options.delete(:locale)] if options[:locale]
+
+          super(name, options.except(:label, :help, :no_label))
         else
           class_names = ["control-group"]
           class_names << :error if object.errors[name].any?
           class_names << :error if name == :attachment and object.errors["%s_file_name" % name].any?
 
-          class_names << :last if options[:last]
-
+          class_names << :last if options.delete(:last)
 
           content_tag :div, class: class_names.join(" ") do
-            (options[:no_label].blank? ? require_label(name, options[:label], {class: 'control-label'}.merge(options.slice(:required))) : "").html_safe +
+            (options.delete(:no_label).blank? ? require_label(name, options[:label], {class: 'control-label'}.merge(options.slice(:required))) : "").html_safe +
             content_tag(:div, class: 'controls') do
               help = display_error_or_help(name, options[:help])
               help = content_tag(@help_tag, class: @help_css) { help } if help
-              options[:placeholder] = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, name.to_s]) if options[:placeholder] == true
-              args << options.except(:label, :help, :no_label, :no_bootstrap, :last)
+
+              args << options.except(:label, :help, :locale)
 
               name = "%s_%s" % [name.to_s, options.delete(:locale)] if options[:locale]
 
@@ -117,16 +120,15 @@ module BootstrapForm
       define_method(method_name) do |name, *args|
         options = args.extract_options!.symbolize_keys!
 
-        raise "Please defined :languages in boottstrap_form_for" if @languages.blank?
+        raise "Please defined :languages in bootstrap_form_for" if @languages.blank?
 
         options.merge!({tag_type: method_name.gsub("i18n_", "").to_sym})
 
         # When fields grouped
         if name.is_a?(Array)
-          options.merge!({fields_grouped: true})
           translation_fields name, options
         else
-          options.merge!({no_label: true, no_bootstrap: true})
+          options.merge!({no_label: true, :last => true})
 
           translation_fields [name], options
         end
@@ -134,10 +136,11 @@ module BootstrapForm
     end
 
     def translation_fields names, options
-      # Raise if no major label configured when fields grouped
-      raise "no :major_label configured" if options[:fields_grouped] and options[:major_label].blank?
+      class_names = ["control-group"]
+      class_names << :error if any_errors_on?(names)
+      class_names << :last  if names.count != 1 and options.delete(:last).present?
 
-      content_tag :div, class: "control-group#{(' error' if any_errors_on?(names))}"  do
+      content_tag :div, class: class_names  do
         require_label(options[:fields_grouped] ? options[:major_label] : names.first, options[:label], class: 'control-label') +
         if @languages.length == 1
           language = default_language = @languages.first
@@ -149,18 +152,23 @@ module BootstrapForm
 
           tabs_content = construct_tab_content(object, names, options[:fields_grouped] ? new_field : names.first, default_language == language.locale, language.locale, options)
         else
-          content_tag(:div, class: "tab-container") do
-            content_tag(:span, "Translate", class: "translate-title") +
-            content_tag(:div) do
-              if fields_translated?(object, names)
-                construct_tabs(object, names, options)
-              else
-                raise "no field to translate"
+          html = if fields_translated?(object, names)
+            construct_tabs(object, names, options)
+          else
+            raise "no field to translate"
+          end
+
+          if options.delete(:no_container) == true
+            html
+          else
+            content_tag(:div, class: "tab-container") do
+              content_tag(:span, "Translate", class: "translate-title") +
+              content_tag(:div) do
+                html
               end
             end
           end
         end
-
       end
     end
 
@@ -179,6 +187,7 @@ module BootstrapForm
           options[:fields_grouped] ? options[:major_label] : names.first
         end
 
+        options[:locale] = language.locale
         tabs_content << construct_tab_content(object, names, options[:fields_grouped] ? new_field : names.first, default_language == language.locale, language.locale, options)
       end
       content_tag(:ul, tabs.join.html_safe          , class: "nav nav-tabs") +
@@ -305,21 +314,20 @@ module BootstrapForm
 
           options[:label] = object.class.human_attribute_name(method)
 
-          help_label = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, method.to_s]) if options[:help] == true
-
-          method = "%s_%s" % [method, locale] unless options[:tag_type] == :file_field
+          # options[:help] = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, method.to_s]) if options[:help] == true
+          # raise options.inspect
 
           html << case options[:tag_type]
             when :text_field
-              text_field(method, options.except(:tag_type).merge({:help => help_label, :bypass_authorization => true}))
+              text_field(method, options.except(:tag_type).merge({:bypass_authorization => true}))
             when :text_area
-              text_area(method, options.except(:tag_type).merge({:help => help_label, :bypass_authorization => true}))
+              text_area(method, options.except(:tag_type).merge({:bypass_authorization => true}))
             when :file_field
               fields_for options[:object] do |attachment_fields|
                 if attachment_fields.object.locale == locale
                   attachment_fields.hidden_field(:event_id) +
                   attachment_fields.hidden_field(:locale) +
-                  attachment_fields.file_field(method, options.except(:tag_type).merge({:help => help_label}))
+                  attachment_fields.file_field(method, options.except(:tag_type))
                 end
               end
           end
@@ -389,10 +397,11 @@ module BootstrapForm
       fields.map{|name| object.errors[name].any?}.index(true).present?
     end
 
-    def require_label method, *args
-      options = args.extract_options!.symbolize_keys!
+    def require_label method, label = nil, *args
+      options        = args.extract_options!.symbolize_keys!
+      required_field = options.delete(:required)
 
-      label(method, *args).gsub("</label>", "%s</label>" % mark_required(method, options.delete(:required))).html_safe
+      label(method, label, options).gsub("</label>", "%s</label>" % mark_required(method, required_field)).html_safe
     end
 
     def mark_required(attribute, bypass_required = false)
