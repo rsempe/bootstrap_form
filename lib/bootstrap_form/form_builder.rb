@@ -126,7 +126,7 @@ module BootstrapForm
 
         # When fields grouped
         if name.is_a?(Array)
-          translation_fields name, options
+          translation_fields name, options.merge!({no_label: true})
         else
           options.merge!({no_label: true, :last => true})
 
@@ -141,7 +141,13 @@ module BootstrapForm
       class_names << :last  if names.count != 1 and options.delete(:last).present?
 
       content_tag :div, class: class_names  do
-        require_label(options[:fields_grouped] ? options[:major_label] : names.first, options[:label], class: 'control-label') +
+        label_tag = if options.delete(:no_label).blank?
+          require_label(options[:fields_grouped] ? options[:major_label] : names.first, options[:label], class: 'control-label')
+        else
+          ""
+        end
+
+        label_tag.html_safe +
         if @languages.length == 1
           language = default_language = @languages.first
           new_field = if options[:tag_type] == :file_field
