@@ -26,7 +26,7 @@ module BootstrapForm
         if options.delete(:no_bootstrap)
           name = "%s_%s" % [name.to_s, options.delete(:locale)] if options[:locale]
 
-          super(name, options.except(:label, :help, :no_label))
+          super(name, options.except(:label, :help, :no_label, :required))
         else
           class_names = ["control-group"]
           class_names << :error if object.errors[name].any?
@@ -40,7 +40,7 @@ module BootstrapForm
               help = display_error_or_help(name, options[:help])
               help = content_tag(@help_tag, class: @help_css) { help } if help
 
-              args << options.except(:label, :help, :locale)
+              args << options.except(:label, :help, :locale, :required)
 
               name = "%s_%s" % [name.to_s, options.delete(:locale)] if options[:locale]
 
