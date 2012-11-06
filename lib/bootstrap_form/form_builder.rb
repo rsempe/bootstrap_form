@@ -29,8 +29,10 @@ module BootstrapForm
           super(name, options.except(:label, :help, :no_label, :required))
         else
           class_names = ["control-group"]
+
           class_names << :error if object.errors[name].any?
-          class_names << :error if name == :attachment and object.errors["%s_file_name" % name].any?
+          class_names << :error if options[:locale] and object.errors.keys.select{|key| key.match(/^#{name}_../)}.any?
+          class_names << :error if name == :attachment and (object.errors["%s_file_name" % name].any? or object.errors["%s_content_type" % name].any?)
 
           class_names << :last if options.delete(:last)
 
@@ -42,7 +44,7 @@ module BootstrapForm
 
               args << options.except(:label, :help, :locale, :required)
 
-              name = "%s_%s" % [name.to_s, options.delete(:locale)] if options[:locale]
+              name = "%s_%s" % [name.to_s, options.delete(:locale)] if options[:locale].present?
 
               content = super(name, *args)
 
