@@ -31,7 +31,7 @@ module BootstrapForm
           class_names = ["control-group"]
 
           class_names << :error if object.errors[name].any?
-          class_names << :error if options[:locale] and object.errors.keys.select{|key| key.match(/^#{name}_../)}.any?
+          class_names << :error if no_translated_errors(name, options[:locale])
           class_names << :error if name == :attachment and (object.errors["%s_file_name" % name].any? or object.errors["%s_content_type" % name].any?)
 
           class_names << :last if options.delete(:last)
@@ -403,6 +403,10 @@ module BootstrapForm
 
     def any_errors_on? fields
       fields.map{|name| object.errors[name].any?}.index(true).present?
+    end
+
+    def no_translated_errors(name, locale)
+      locale.present? and !object.errors.select{|key, values| key.match(/^#{name}_[a-z]{2}$/) and values.present?}.keys.count.zero?
     end
 
     def require_label method, label = nil, *args
