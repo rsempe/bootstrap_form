@@ -36,7 +36,11 @@ module BootstrapForm
 
           class_names << :last if options.delete(:last)
 
-          content_tag :div, class: class_names.join(" ") do
+          content_tag_options = {}
+          content_tag_options[:class] = class_names.join(" ") if class_names.present?
+          content_tag_options[:style] = options.delete(:style) if options[:style].present?
+
+          content_tag :div, content_tag_options do
             (options.delete(:no_label).blank? ? require_label(name, options[:label], {class: 'control-label'}.merge(options.slice(:required))) : "").html_safe +
             content_tag(:div, class: 'controls') do
               help = display_error_or_help(name, options[:help])
