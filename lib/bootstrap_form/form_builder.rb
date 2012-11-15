@@ -200,7 +200,6 @@ module BootstrapForm
         end
 
         options[:locale] = language.locale
-
         tabs_content << construct_tab_content(object, names, options[:fields_grouped] ? new_field : names.first, default_language == language.locale, language.locale, options)
       end
       content_tag(:ul, tabs.join.html_safe          , class: "nav nav-tabs") +
@@ -268,8 +267,12 @@ module BootstrapForm
       class_names = ["control-group"]
       class_names << :error if object.errors[name].any?
       class_names << :last if options[:last]
+      class_names << options.delete(:class)
 
-      content_tag :div, class: class_names  do
+      content_tag_options = {}
+      content_tag_options[:class] = class_names.join(" ") if class_names.present?
+
+      content_tag :div, content_tag_options  do
         content_tag(:div, class: 'controls') do
           args << options.except(:label, :help)
 
@@ -329,8 +332,6 @@ module BootstrapForm
 
           # options[:help] = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, method.to_s]) if options[:help] == true
           # raise options.inspect
-
-          options[:locale] = locale
 
           html << case options[:tag_type]
             when :text_field
