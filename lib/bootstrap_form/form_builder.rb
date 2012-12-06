@@ -329,9 +329,8 @@ module BootstrapForm
         methods.each_with_index do |method, index|
 
           options[:label] = object.class.human_attribute_name(method)
-
-          # options[:help] = I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, method.to_s]) if options[:help] == true
-          # raise options.inspect
+          
+          options[:locale] = locale
 
           html << case options[:tag_type]
             when :text_field
