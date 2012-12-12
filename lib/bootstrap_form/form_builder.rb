@@ -214,10 +214,13 @@ module BootstrapForm
         options = args.extract_options!.symbolize_keys!.merge({:bypass_authorization => true})
 
         class_names = %w(control-group)
+        class_names << options.delete(:class)
         class_names << :error if object.errors[name].any?
 
         content_tag :div, class: class_names do
-          require_label(name, options.delete(:label), {class: 'control-label'}) +
+          content = options.delete(:no_label).present? ? "" : require_label(name, options.delete(:label), {class: 'control-label'})
+
+          content.html_safe +
           content_tag(:div, class: "controls form-inline") do
             case method_name
             when "datetime_picker"
@@ -260,6 +263,29 @@ module BootstrapForm
       end
     end
 
+    def time_picker_from_to starts_at, ends_at, *args
+      options = args.extract_options!.symbolize_keys!
+
+      class_names = %w(control-group)
+      class_names << options.delete(:class)
+      class_names << :error if object.errors[starts_at].any? or object.errors[ends_at].any?
+
+      content_tag :div, class: class_names do
+        (require_label(nil, options.delete(:major_label), {class: 'control-label'}.merge(options)) || "").html_safe +
+        content_tag(:div, class: "controls") do
+          options.delete(:required)
+          content_tag(:span, :class => "input-prepend input-append") do
+            content_tag(:span) do
+              text_field_for_time_picker(starts_at, options.merge({:label => I18n.t("date.from")}))
+            end +
+            content_tag(:i, nil, class: "icon-white") +
+            content_tag(:span) do
+              text_field_for_time_picker(ends_at, options.merge({:label => I18n.t("date.to")}))
+            end
+          end
+        end
+      end
+    end
 
     def check_box(name, *args)
       options = args.extract_options!.symbolize_keys!
@@ -329,7 +355,7 @@ module BootstrapForm
         methods.each_with_index do |method, index|
 
           options[:label] = object.class.human_attribute_name(method)
-          
+
           options[:locale] = locale
 
           html << case options[:tag_type]
@@ -401,7 +427,7 @@ module BootstrapForm
     def text_field_for_time_picker name, *args
       options = args.extract_options!.symbolize_keys!
 
-      text_field(name, {:class => "bootstrap_date_time_picker", :no_bootstrap => true}.merge(options))
+      text_field(name, {:class => "bootstrap_date_time_picker input-mini", :no_bootstrap => true}.merge(options))
     end
 
     def fields_translated? object, fields
@@ -417,6 +443,8 @@ module BootstrapForm
     end
 
     def require_label method, label = nil, *args
+      return if method.blank? and label.blank?
+
       options        = args.extract_options!.symbolize_keys!
       required_field = options.delete(:required)
 
