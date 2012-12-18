@@ -132,9 +132,9 @@ module BootstrapForm
 
         # When fields grouped
         if name.is_a?(Array)
-          translation_fields name, options.merge!({no_label: true})
+          translation_fields name, options
         else
-          options.merge!({no_label: true, :last => true})
+          options.merge!({:last => true})
 
           translation_fields [name], options
         end
@@ -147,7 +147,8 @@ module BootstrapForm
       class_names << :last  if names.count != 1 and options.delete(:last).present?
 
       content_tag :div, class: class_names  do
-        label_tag = if options.delete(:no_label).blank?
+        label_tag = if options[:no_label].blank?
+          options[:no_label] = true if names.count == 1
           require_label(options[:fields_grouped] ? options[:major_label] : names.first, options[:label], class: 'control-label')
         else
           ""
@@ -300,9 +301,8 @@ module BootstrapForm
 
       content_tag :div, content_tag_options  do
         content_tag(:div, class: 'controls') do
-          args << options.except(:label, :help)
-
           html = super(name, *args) + ' ' + (options[:label].blank? ? object.class.human_attribute_name(name) : options[:label])
+
           require_label(name, html, class: 'checkbox')
         end
       end
