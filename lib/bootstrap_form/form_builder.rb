@@ -264,6 +264,31 @@ module BootstrapForm
       end
     end
 
+    def date_picker_from_to starts_at, ends_at, *args
+      options = args.extract_options!.symbolize_keys!
+
+      options[:content_tag] = :span
+      class_names = %w(control-group)
+      class_names << :error if object.errors[starts_at].any? or object.errors[ends_at].any?
+
+      content_tag :div, class: class_names do
+        (require_label(nil, options.delete(:major_label), {class: 'control-label'}.merge(options)) || "").html_safe +
+        content_tag(:div, class: "controls") do
+          options.delete(:required)
+          content_tag(:div, :class => "input-append input-prepend") do
+            content_tag(:span) do
+              text_field_for_date_picker(starts_at, options.merge({:label => I18n.t("date.from")}))
+            end +
+            content_tag(:i, nil, class: "icon-white") +
+            content_tag(:span) do
+              text_field_for_date_picker(ends_at, options.merge({:label => I18n.t("date.to")}))
+            end
+          end
+        end
+      end
+    end
+
+
     def time_picker_from_to starts_at, ends_at, *args
       options = args.extract_options!.symbolize_keys!
 
@@ -407,7 +432,7 @@ module BootstrapForm
     end
 
     def text_field_for_date_time_picker name, options = {}
-      content_tag(:span, (options.delete(:label) || object.class.human_attribute_name(name)) + mark_required(name), class: 'add-on').html_safe +
+      # content_tag(:span, (options.delete(:label) || object.class.human_attribute_name(name)) + mark_required(name), class: 'add-on').html_safe +
       text_field_for_date_picker(name.to_s + "_date", options.merge({:content_tag => :span})) +
       text_field(name.to_s + "_time", {:class => "bootstrap_date_time_picker input-mini", :no_bootstrap => true}.merge(options))
     end
@@ -416,6 +441,7 @@ module BootstrapForm
     def text_field_for_date_picker name, *args
       options = args.extract_options!.symbolize_keys!
 
+      content_tag(:span, (options.delete(:label) || object.class.human_attribute_name(name)) + mark_required(name), class: 'add-on').html_safe +
       content_tag(options[:content_tag] || :div, :class => "input-append input-prepend date bootstrap_date_picker", :"data-date" => object.send(name), :"data-date-format" => "dd/mm/yyyy") do
         text_field(name, {:class => "input-small", :no_bootstrap => true}.merge(options)) +
         content_tag(:span, class: "add-on") do
