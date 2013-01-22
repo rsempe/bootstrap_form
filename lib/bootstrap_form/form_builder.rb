@@ -227,7 +227,7 @@ module BootstrapForm
             when "datetime_picker"
               options.merge!({:bypass_authorization => true})
 
-              text_field_for_date_picker((name.to_s + "_date").to_sym, options) +
+              text_field_for_date_picker((name.to_s + "_date").to_sym, options.merge({no_label: true})) +
               text_field_for_time_picker((name.to_s + "_time").to_sym, options)
             when "date_picker"
               text_field_for_date_picker(name, options)
@@ -441,7 +441,7 @@ module BootstrapForm
     def text_field_for_date_picker name, *args
       options = args.extract_options!.symbolize_keys!
 
-      content_tag(:span, (options.delete(:label) || object.class.human_attribute_name(name)) + mark_required(name), class: 'add-on').html_safe +
+      (options.delete(:no_label).present? ? "" : content_tag(:span, (options.delete(:label) || object.class.human_attribute_name(name)) + mark_required(name), class: 'add-on')).html_safe +
       content_tag(options[:content_tag] || :div, :class => "input-append input-prepend date bootstrap_date_picker", :"data-date" => object.send(name), :"data-date-format" => "dd/mm/yyyy") do
         text_field(name, {:class => "input-small", :no_bootstrap => true}.merge(options)) +
         content_tag(:span, class: "add-on") do
