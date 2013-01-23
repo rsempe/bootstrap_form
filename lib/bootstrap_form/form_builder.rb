@@ -219,15 +219,15 @@ module BootstrapForm
         class_names << :error if object.errors[name].any?
 
         content_tag :div, class: class_names do
-          content = options.delete(:no_label).present? ? "" : require_label(name, options.delete(:label), {class: 'control-label'})
+          content = options[:no_label].present? ? "" : require_label(name, options[:no_label], {class: 'control-label'})
 
           content.html_safe +
-          content_tag(:div, class: "controls form-inline") do
+          content_tag(:div, class: "controls form-inline input-append input-prepend") do
             case method_name
             when "datetime_picker"
               options.merge!({:bypass_authorization => true})
 
-              text_field_for_date_picker((name.to_s + "_date").to_sym, options.merge({no_label: true})) +
+              text_field_for_date_picker((name.to_s + "_date").to_sym, options) +
               text_field_for_time_picker((name.to_s + "_time").to_sym, options)
             when "date_picker"
               text_field_for_date_picker(name, options)
