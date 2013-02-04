@@ -91,31 +91,40 @@ module BootstrapForm
     end
 
     def image_file_field(field, options = {})
-      file_field(field, options.merge({file_type: :media, paperclip_style: "thumbnail", with_link_helper: true}))
+      file_field(field, {file_type: :media, paperclip_style: "thumbnail", with_link_helper: true}.merge(options))
     end
 
     def file_field_render(method_name, field, content, options = {})
       has_uploaded_file = @object.send("#{field}?") && object.id
 
-      if options[:with_link_helper] == true and has_uploaded_file
+      if options[:with_link_helper] == true
         options[:file_type] ||= :file
+        file_content = ""
 
-        case options[:file_type].to_sym
-          when :file, :pdf
-            filelink_html = @template.link_to @object.send("#{field}_file_name"), @object.send("#{field}").url,:target => :blank
-            filename_html = content_tag(:i, nil, class: "icon-file") + filelink_html
+        if has_uploaded_file
+          case options[:file_type].to_sym
+            when :file, :pdf
+              filelink_html = @template.link_to @object.send("#{field}_file_name"), @object.send("#{field}").url,:target => :blank
+              filename_html = content_tag(:i, nil, class: "icon-file") + filelink_html
 
-          when :media
-            url = options[:paperclip_style] ? @object.send(field).url(options[:paperclip_style]) : @object.send(field).url()
+            when :media
+              url = options[:paperclip_style] ? @object.send(field).url(options[:paperclip_style]) : @object.send(field).url()
 
-            filelink_html = options[:paperclip_style] ? @object.send(field).url(options[:paperclip_style]) : @object.send(field).url()
-            filename_html = has_uploaded_file ? @template.image_tag(url, :class => options[:class]) : ""
+              filelink_html = options[:paperclip_style] ? @object.send(field).url(options[:paperclip_style]) : @object.send(field).url()
+              filename_html = has_uploaded_file ? @template.image_tag(url, :class => options[:picture_class]) : ""
+          end
+
+          remove_link   = content_tag(:div, :onclick => "remove_attached_file(this)", :class => "remove_link") do
+            content_tag(:i, nil, class: "icon-remove") +
+            I18n.t('bridge.form.remove_entry')
+          end
+
+          file_content = filename_html + remove_link
         end
 
         remove_field  = hidden_field((options.delete(:use_remove_attribute) ? "remove_#{field}" : :"_destroy"))
-        remove_link   = content_tag(:div, content_tag(:i, nil, class: "icon-remove") + I18n.t('bridge.form.remove_entry'), :onclick => "remove_attached_file(this)", :class => "remove_link")
 
-        (filename_html + remove_field + remove_link + content).html_safe
+        (file_content + remove_field + content).html_safe
       else
         content
       end
@@ -305,7 +314,7 @@ module BootstrapForm
               text_field_for_time_picker(starts_at, options.merge({:label => I18n.t("date.from")}))
             end +
             content_tag(:i, nil, class: "icon-white") +
-            content_tag(:span) do
+            content_tag(:span, class: "input-append bootstrap-timepicker-component") do
               text_field_for_time_picker(ends_at, options.merge({:label => I18n.t("date.to")}))
             end
           end
