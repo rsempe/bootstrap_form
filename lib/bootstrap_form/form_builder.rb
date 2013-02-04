@@ -85,6 +85,15 @@ module BootstrapForm
       case method_name.to_sym
         when :file_field
           content_tag :div, file_field_render(method_name, field, content, options), :style => "margin-top: 10px"
+        when :text_field
+          if (preprend = options.delete(:preprend)).present?
+            content = content_tag(:div, class: "input-prepend") do
+              content_tag(:span, preprend, class: "add-on") +
+              content
+            end
+          else
+            content
+          end
         else
           content
       end
