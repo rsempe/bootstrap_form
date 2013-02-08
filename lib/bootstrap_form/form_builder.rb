@@ -471,7 +471,7 @@ module BootstrapForm
     def text_field_for_time_picker name, *args
       options = args.extract_options!.symbolize_keys!
 
-      content_tag :span, text_field(name, {:class => "bootstrap_date_time_picker input-mini", :no_bootstrap => true}.merge(options)), class: "input-append"
+      content_tag :span, text_field(name, {:class => "bootstrap_date_time_picker input-mini", :no_bootstrap => true, maxlength: 5}.merge(options)), class: "input-append"
     end
 
     def fields_translated? object, fields
