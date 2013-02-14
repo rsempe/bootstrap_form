@@ -86,9 +86,9 @@ module BootstrapForm
         when :file_field
           content_tag :div, file_field_render(method_name, field, content, options), :style => "margin-top: 10px"
         when :text_field
-          if (preprend = options.delete(:preprend)).present?
+          if (prepend = options.delete(:prepend)).present?
             content = content_tag(:div, class: "input-prepend") do
-              content_tag(:span, preprend, class: "add-on") +
+              content_tag(:span, prepend, class: "add-on") +
               content
             end
           else
@@ -471,7 +471,7 @@ module BootstrapForm
     def text_field_for_time_picker name, *args
       options = args.extract_options!.symbolize_keys!
 
-      content_tag :span, text_field(name, {:class => "bootstrap_date_time_picker input-mini", :no_bootstrap => true, maxlength: 5}.merge(options)), class: "input-append"
+      content_tag :span, text_field(name, {:class => "bootstrap_date_time_picker input-mini", :no_bootstrap => true}.merge(options)), class: "input-append"
     end
 
     def fields_translated? object, fields
