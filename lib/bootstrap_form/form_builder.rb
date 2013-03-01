@@ -77,7 +77,7 @@ module BootstrapForm
           I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, name.to_s])
         else
           help_message
-        end
+        end.try(:html_safe)
       end
     end
 
