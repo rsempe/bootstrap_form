@@ -77,7 +77,7 @@ module BootstrapForm
           I18n.t("bridge.%s.%s.help.example" % [object.class.to_s.underscore, name.to_s])
         else
           help_message
-        end.try(:html_safe)
+        end
       end
     end
 
@@ -483,7 +483,7 @@ module BootstrapForm
     end
 
     def no_translated_errors(name, locale)
-      locale.present? and !object.errors.select{|key, values| key.match(/^#{name}_[a-z]{2}$/) and values.present?}.keys.count.zero?
+      locale.present? and !object.errors.messages.select{|key, values| key.match(/^#{name}_[a-z]{2}$/) and values.present?}.keys.count.zero?
     end
 
     def require_label method, label = nil, *args
