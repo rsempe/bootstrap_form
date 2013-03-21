@@ -16,7 +16,26 @@ module BootstrapForm
 
       @languages = options.delete(:languages)
     end
+    
+    def error_messages(options = {})
+      html = ''
+      if @object.errors.any?
+        header_message = options.include?(:header_message) ? options[:header_message] : I18n.t('bridge.form.erfrors.header_message')
+        message        = options.include?(:message) ? options[:message] : I18n.t('bridge.form.errors.message')
 
+        html << content_tag(:div, class: "errorExplanation", id: "errorExplanation") do
+          content_tag(:h2, header_message) +
+          content_tag(:p, message) +
+          content_tag(:ul) do
+            @object.errors.full_messages.collect{|msg| content_tag(:li, msg)}.join.html_safe
+          end
+        end
+      end
+
+      html.html_safe
+    end
+    
+    
     %w{text_field text_area password_field collection_select file_field date_select select}.each do |method_name|
       define_method(method_name) do |name, *args|
         options = args.extract_options!.symbolize_keys!
