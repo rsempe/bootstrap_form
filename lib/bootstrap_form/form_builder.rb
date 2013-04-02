@@ -16,7 +16,7 @@ module BootstrapForm
 
       @languages = options.delete(:languages)
     end
-    
+
     def error_messages(options = {})
       html = ''
       if @object.errors.any?
@@ -34,8 +34,8 @@ module BootstrapForm
 
       html.html_safe
     end
-    
-    
+
+
     %w{text_field text_area password_field collection_select file_field date_select select}.each do |method_name|
       define_method(method_name) do |name, *args|
         options = args.extract_options!.symbolize_keys!
@@ -285,7 +285,7 @@ module BootstrapForm
       class_names << :error if object.errors[starts_at].any? or object.errors[ends_at].any?
 
       content_tag :div, class: class_names do
-        require_label(nil, options.delete(:major_label), {class: 'control-label'}.merge(options)) +
+        require_label(nil, options.delete(:major_label), {class: 'control-label'}.merge(options)).html_safe +
         content_tag(:div, class: "controls") do
           options.delete(:required)
           content_tag(:div, :class => "input-append input-prepend") do
@@ -506,7 +506,7 @@ module BootstrapForm
     end
 
     def require_label method, label = nil, *args
-      return if method.blank? and label.blank?
+      return "" if method.blank? and label.blank?
 
       options        = args.extract_options!.symbolize_keys!
       required_field = options.delete(:required)
