@@ -15,6 +15,8 @@ module BootstrapForm
       @help_after = options.fetch(:help_position, '').to_sym == :after
 
       @languages = options.delete(:languages)
+
+      @activate_required = options[:activate_required]
     end
 
     def error_messages(options = {})
@@ -65,7 +67,12 @@ module BootstrapForm
               help = display_error_or_help(name, options[:help])
               help = content_tag(@help_tag, class: @help_css) { help } if help
 
-              args << options.except(:label, :help, :locale, :required)
+              args << if @activate_required && is_required?(name)
+                options.merge!({required: true})
+                options.except(:label, :help, :locale)
+              else
+                options.except(:label, :help, :locale, :required)
+              end
 
               name = "%s_%s" % [name.to_s, options.delete(:locale)] if options[:locale].present?
 
@@ -518,7 +525,11 @@ module BootstrapForm
       return "*" if bypass_required == true
       return "" if bypass_required == false or attribute.blank?
 
-      object.class.validators_on(attribute).map(&:class).include?(ActiveModel::Validations::PresenceValidator) ? "*" : ""
+      is_required?(attribute) ? "*" : ""
+    end
+
+    def is_required?(attribute)
+      object.class.validators_on(attribute).map(&:class).include?(ActiveModel::Validations::PresenceValidator)
     end
 
   end
