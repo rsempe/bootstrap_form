@@ -166,7 +166,7 @@ module BootstrapForm
     end
 
 
-    %w(i18n_text_field i18n_text_area).each do |method_name|
+    %w(i18n_text_field i18n_text_area multiple_i18n_fields).each do |method_name|
       define_method(method_name) do |name, *args|
         options = args.extract_options!.symbolize_keys!
 
@@ -191,7 +191,7 @@ module BootstrapForm
       class_names << :last  if names.count != 1 and options.delete(:last).present?
 
       content_tag :div, class: class_names  do
-        label_tag = if options[:no_label].blank?
+        label_tag = if options[:tag_type] != :multiple_fields && options[:no_label].blank?
           options[:no_label] = true if names.count == 1
           require_label(options[:fields_grouped] ? options[:major_label] : names.first, options[:label], class: 'control-label')
         else
@@ -207,7 +207,10 @@ module BootstrapForm
             options[:fields_grouped] ? options[:major_label] : names.first
           end
 
-          tabs_content = construct_tab_content(object, names, options[:fields_grouped] ? new_field : names.first, default_language == language.locale, language.locale, options)
+          names.each do |name|
+            field = options[:fields_grouped] ? new_field : name
+            construct_tab_content(object, names, field, default_language == language.locale, language.locale, options)
+          end
         else
           html = if fields_translated?(object, names)
             construct_tabs(object, names, options)
@@ -440,6 +443,10 @@ module BootstrapForm
                   attachment_fields.file_field(method, options.except(:tag_type))
                 end
               end
+            when :multiple_fields
+              # This option only supports text_field now.
+              opts = options[:fields][method].merge(options.except(:fields))
+              text_field(method, opts.except(:tag_type).merge({ :bypass_authorization => true }))
           end
         end
 
